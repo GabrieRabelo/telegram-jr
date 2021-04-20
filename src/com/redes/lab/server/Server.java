@@ -1,36 +1,38 @@
 package com.redes.lab.server;
 
-import java.io.File;
-import java.io.FileOutputStream;
+import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.sql.Time;
+import java.time.Instant;
 
-class Server {
+public class Server {
 
-    private static final String BASE_PATH = "src/com/rabelo/udp/server/disk/";
+    DatagramSocket serverSocket;
+    byte[] buffer = new byte[256];
 
-    public static void main(String[] args)  throws Exception {
+    public Server() throws IOException {
+        serverSocket = new DatagramSocket(9876);
+    }
 
-        DatagramSocket serverSocket = new DatagramSocket(9876);
-
-        byte[] receiveData = new byte[10000];
-
-        File file = new File( BASE_PATH + "received.txt");
-        FileOutputStream f = new FileOutputStream(file);
+    public void run() throws IOException {
 
         int len;
+
+        System.out.println("Servidor Telegram Jr.");
+
         while (true) {
 
-            DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+            DatagramPacket receivePacket = new DatagramPacket(buffer, buffer.length);
 
             serverSocket.receive(receivePacket);
 
             len = receivePacket.getLength();
 
             if (len > 0) {
-
-                f.write(receiveData,0, len);
-                f.flush();
+                var address = receivePacket.getAddress();
+                var message = new String(receivePacket.getData()).trim();
+                System.out.println(Time.from(Instant.now()).toString().split(" ")[3] + address + ":" + receivePacket.getPort() + " falou: " + message);
             }
         }
     }
