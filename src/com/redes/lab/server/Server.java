@@ -6,13 +6,14 @@ import java.net.DatagramSocket;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 public class Server {
 
     private final DatagramSocket serverSocket;
     private final List<Client> clients = new ArrayList<>();
     private final MulticastPublisher multicastPublisher;
-    private byte[] buffer = new byte[256];
+    private byte[] buffer;
 
     public Server() throws IOException {
         serverSocket = new DatagramSocket(9876);
@@ -50,7 +51,10 @@ public class Server {
                         this.registerClient(receivedPacket, argument);
                         break;
                     default:
-                        this.yellMessage(receivedPacket, stringMessage);
+                        if(validateClient(receivedPacket))
+                            this.yellMessage(receivedPacket, stringMessage);
+                        else
+                            System.out.println("Cliente não registrado ou expirado.");
                         break;
                 }
             }
@@ -58,7 +62,7 @@ public class Server {
     }
 
     private void registerClient(DatagramPacket receivedPacket, String name) throws IOException {
-        System.out.println("Nova solicitação de registro para " + name);
+        System.out.println("Nova solicitação de registro para " + name + ".");
         var client = new Client(name, receivedPacket.getAddress(), receivedPacket.getPort());
         clients.add(client);
 
@@ -66,10 +70,19 @@ public class Server {
     }
 
     private void yellMessage(DatagramPacket receivedPacket, String message) throws IOException {
-        var client = clients.stream().filter(it -> it.getPort() == receivedPacket.getPort()).findFirst();
+        var client = getClient(receivedPacket);
         if (client.isPresent()){
             multicastPublisher.sendMessage(getHour() + " " + client.get().getName() + ": " + message);
         }
+    }
+
+    private Optional<Client> getClient(DatagramPacket receivedPacket){
+        return clients.stream().filter(it -> it.getPort() == receivedPacket.getPort()).findFirst();
+    }
+
+    private boolean validateClient(DatagramPacket receivedPacket){
+        var client = getClient(receivedPacket);
+        return client.isPresent();
     }
 
     private String getHour(){
