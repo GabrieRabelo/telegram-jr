@@ -2,7 +2,7 @@ package com.redes.lab.server;
 
 import java.io.IOException;
 
-public class Application {
+public class ApplicationServer {
 
     public static void main(String[] args) throws IOException {
 

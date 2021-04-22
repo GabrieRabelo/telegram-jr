@@ -2,7 +2,7 @@ package com.redes.lab.client;
 
 import java.io.IOException;
 
-public class TelegramJr {
+public class ApplicationClient {
 
     public static void main(String[] args) throws IOException {
 

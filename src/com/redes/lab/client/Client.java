@@ -9,21 +9,26 @@ import java.util.Scanner;
 
 class Client {
 
-    private DatagramSocket clientSocket;
-    private InetAddress IPAddress;
-    private Scanner scanner;
-    private byte[] sendBuffer = new byte[256];
+    private final DatagramSocket clientSocket;
+    private final InetAddress IPAddress;
+    private final Scanner scanner;
+    private final MulticastReceiver multicastReceiver;
+    private byte[] sendBuffer;
 
     public Client() throws IOException{
         Random r = new Random();
+        scanner = new Scanner(System.in);
+
         clientSocket = new DatagramSocket(r.nextInt(9999));
         IPAddress = InetAddress.getByName("localhost");
-        scanner = new Scanner(System.in);
+
+        multicastReceiver = new MulticastReceiver();
+        multicastReceiver.start();
     }
 
     public void run() throws IOException {
 
-        System.out.println("Escreva sua mensagem");
+        System.out.println("Bem-vindo ao Telegram JR. Para se cadastrar use o comando /register [nome]");
 
         while(true){
 
