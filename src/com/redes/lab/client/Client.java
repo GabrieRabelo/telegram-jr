@@ -22,6 +22,7 @@ class Client {
         clientSocket = new DatagramSocket(r.nextInt(9999));
         IPAddress = InetAddress.getByName("localhost");
 
+        //Inicia receptor multicast
         multicastReceiver = new MulticastReceiver();
         multicastReceiver.start();
     }
