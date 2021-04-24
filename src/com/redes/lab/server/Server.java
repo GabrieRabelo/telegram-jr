@@ -11,6 +11,9 @@ import java.util.Optional;
 import java.util.Random;
 import java.util.logging.Logger;
 
+import static com.redes.lab.server.Useless.helloMessages;
+import static com.redes.lab.server.Useless.logo;
+
 public class Server {
 
     public static final Logger LOGGER = Logger.getLogger("Telegram Jr.");
@@ -79,9 +82,8 @@ public class Server {
         var client = new Client(name, IPAddress, port);
         clients.add(client);
 
-        var helloMessage = Useless.helloMessages[r.nextInt(Useless.helloMessages.length)];
-        multicastPublisher.sendMessage(getHour() +" Servidor: "
-                + String.format(helloMessage, name));
+        var helloMessage = helloMessages[r.nextInt(helloMessages.length-1)];
+        multicastPublisher.sendMessage(getHour() + " Servidor: " + String.format(helloMessage, name));
     }
 
     private void defaultMessage(int port, String message) throws IOException {
@@ -113,7 +115,7 @@ public class Server {
 
     public static void main(String[] args) throws IOException {
 
-        System.out.println(Useless.logo);
+        System.out.println(logo);
 
         var server = new Server();
         server.run();
