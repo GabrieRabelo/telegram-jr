@@ -4,7 +4,6 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.util.Random;
 import java.util.Scanner;
 
 class Client {
@@ -13,13 +12,11 @@ class Client {
     private final InetAddress IPAddress;
     private final Scanner scanner;
     private final MulticastReceiver multicastReceiver;
-    private byte[] sendBuffer;
 
     public Client() throws IOException{
-        Random r = new Random();
         scanner = new Scanner(System.in);
 
-        clientSocket = new DatagramSocket(r.nextInt(9999));
+        clientSocket = new DatagramSocket();
         IPAddress = InetAddress.getByName("localhost");
 
         //Inicia receptor multicast
@@ -33,9 +30,10 @@ class Client {
 
         while(true){
 
-            sendBuffer = scanner.nextLine().getBytes();
+            byte[] sendBuffer = scanner.nextLine().getBytes();
             DatagramPacket pack = new DatagramPacket(sendBuffer, sendBuffer.length, IPAddress, 9876);
             clientSocket.send(pack);
+
         }
 
 

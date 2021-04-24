@@ -8,12 +8,17 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
+import java.util.logging.Logger;
 
 public class Server {
+
+    public static final Logger LOGGER = Logger.getLogger("Telegram Jr.");
 
     private final DatagramSocket serverSocket;
     private final List<Client> clients = new ArrayList<>();
     private final MulticastPublisher multicastPublisher;
+    private static final Random r = new Random();
 
     public Server() throws IOException {
         serverSocket = new DatagramSocket(9876);
@@ -24,26 +29,27 @@ public class Server {
 
         int len;
 
-        System.out.println("Servidor Telegram Jr.");
+        LOGGER.info("Telegram Jr. Server Started");
 
+        // Command "thread"
         while (true) {
 
             // novo buffer;
             var buffer = new byte[256];
 
-            //recebe mensagem;
+            // recebe mensagem;
             DatagramPacket receivedPacket = new DatagramPacket(buffer, buffer.length);
             serverSocket.receive(receivedPacket);
 
-            //verifica se o pacote não veio vazio, se sim ignora
+            // verifica se o pacote não veio vazio, se sim ignora
             len = receivedPacket.getLength();
             if (len == 0) continue;
 
-            //pega mensagem e separa conforme necessario
+            // pega mensagem e separa conforme necessario
             var message = new String(receivedPacket.getData(),0, receivedPacket.getLength());
             var splitMessage = message.split(" ");
 
-            //verifica se a mensagem recebida é comando
+            // verifica se a mensagem recebida é comando
             String command = "";
             var argument = "";
             if (splitMessage[0].startsWith("/")) {
@@ -59,7 +65,7 @@ public class Server {
                 default:
                     //Se o comando não existir, ou não for comando, envia para todos como fala;
                     if (!validateClient(receivedPacket.getPort())) {
-                        System.out.println("Cliente não registrado ou expirado.");
+                        LOGGER.warning("Cliente não registrado ou expirado.");
                         break;
                     }
                     this.defaultMessage(receivedPacket.getPort(), message);
@@ -69,11 +75,13 @@ public class Server {
     }
 
     private void registerClient(InetAddress IPAddress, int port, String name) throws IOException {
-        System.out.println("Nova solicitação de registro para " + name + ".");
+        LOGGER.info("Nova solicitação de registro para " + name + ".");
         var client = new Client(name, IPAddress, port);
         clients.add(client);
 
-        multicastPublisher.sendMessage(getHour() + " Servidor: Um " + name + " selvagem chegou no chat.");
+        var helloMessage = Useless.helloMessages[r.nextInt(Useless.helloMessages.length)];
+        multicastPublisher.sendMessage(getHour() +" Servidor: "
+                + String.format(helloMessage, name));
     }
 
     private void defaultMessage(int port, String message) throws IOException {
@@ -105,7 +113,10 @@ public class Server {
 
     public static void main(String[] args) throws IOException {
 
+        System.out.println(Useless.logo);
+
         var server = new Server();
         server.run();
+
     }
 }
