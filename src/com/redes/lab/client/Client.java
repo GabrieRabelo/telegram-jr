@@ -41,4 +41,9 @@ class Client {
 
     }
 
+    public static void main(String[] args) throws IOException {
+        var client = new Client();
+        client.run();
+    }
+
 }

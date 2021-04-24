@@ -3,6 +3,7 @@ package com.redes.lab.server;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -13,7 +14,6 @@ public class Server {
     private final DatagramSocket serverSocket;
     private final List<Client> clients = new ArrayList<>();
     private final MulticastPublisher multicastPublisher;
-    private byte[] buffer;
 
     public Server() throws IOException {
         serverSocket = new DatagramSocket(9876);
@@ -29,7 +29,7 @@ public class Server {
         while (true) {
 
             // novo buffer;
-            buffer = new byte[256];
+            var buffer = new byte[256];
 
             //recebe mensagem;
             DatagramPacket receivedPacket = new DatagramPacket(buffer, buffer.length);
@@ -40,9 +40,8 @@ public class Server {
             if (len == 0) continue;
 
             //pega mensagem e separa conforme necessario
-            var message = receivedPacket.getData();
-            var stringMessage = new String(message).trim();
-            var splitMessage = stringMessage.split(" ");
+            var message = new String(receivedPacket.getData(),0, receivedPacket.getLength());
+            var splitMessage = message.split(" ");
 
             //verifica se a mensagem recebida é comando
             String command = "";
@@ -52,34 +51,34 @@ public class Server {
                 argument = splitMessage[1];
             }
 
-
             switch (command) {
                 case "/register":
-                    this.registerClient(receivedPacket, argument);
+                    this.registerClient(receivedPacket.getAddress(), receivedPacket.getPort(), argument);
                     break;
+
                 default:
                     //Se o comando não existir, ou não for comando, envia para todos como fala;
                     if (!validateClient(receivedPacket.getPort())) {
                         System.out.println("Cliente não registrado ou expirado.");
                         break;
                     }
-                    this.yellMessage(receivedPacket, stringMessage);
+                    this.defaultMessage(receivedPacket.getPort(), message);
                     break;
             }
         }
     }
 
-    private void registerClient(DatagramPacket receivedPacket, String name) throws IOException {
+    private void registerClient(InetAddress IPAddress, int port, String name) throws IOException {
         System.out.println("Nova solicitação de registro para " + name + ".");
-        var client = new Client(name, receivedPacket.getAddress(), receivedPacket.getPort());
+        var client = new Client(name, IPAddress, port);
         clients.add(client);
 
         multicastPublisher.sendMessage(getHour() + " Servidor: Um " + name + " selvagem chegou no chat.");
     }
 
-    private void yellMessage(DatagramPacket receivedPacket, String message) throws IOException {
+    private void defaultMessage(int port, String message) throws IOException {
 
-        var client = getSender(receivedPacket.getPort());
+        var client = getSender(port);
         if (client.isPresent()) {
             multicastPublisher.sendMessage(getHour() + " " + client.get().getName() + ": " + message);
         }
@@ -102,5 +101,11 @@ public class Server {
     private String getHour() {
         var localTime = LocalTime.now();
         return localTime.getHour() + ":" + localTime.getMinute();
+    }
+
+    public static void main(String[] args) throws IOException {
+
+        var server = new Server();
+        server.run();
     }
 }

@@ -7,7 +7,7 @@ import java.net.MulticastSocket;
 
 public class MulticastReceiver extends Thread {
     protected MulticastSocket socket;
-    protected byte[] buf;
+    protected byte[] buffer;
 
     public void run() {
         try {
@@ -16,9 +16,10 @@ public class MulticastReceiver extends Thread {
             socket.joinGroup(group);
 
             while (true) {
-                buf = new byte[256];
-                DatagramPacket packet = new DatagramPacket(buf, buf.length);
+                buffer = new byte[256];
+                DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 socket.receive(packet);
+
                 String received = new String(packet.getData(), 0, packet.getLength());
                 System.out.println(received);
                 if ("end".equals(received)) {
