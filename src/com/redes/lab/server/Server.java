@@ -76,6 +76,9 @@ public class Server {
                     this.removeClient(receivedPacket.getPort());
                     break;
 
+                case "!online":
+                    this.showOnlineClients(receivedPacket.getAddress(), receivedPacket.getPort());
+                    break;
                 default:
                     //Se o comando não existir, ou não for comando, envia para todos como fala;
                     this.defaultMessage(receivedPacket.getPort(), message);
@@ -155,6 +158,27 @@ public class Server {
         DatagramPacket datagram = new DatagramPacket(buffer, buffer.length, IPAddress, port);
         serverSocket.send(datagram);
 
+    }
+
+    private void showOnlineClients(InetAddress IPAddress, int port) throws IOException {
+        if (!this.validateClient(port)) {
+            LOGGER.warning(": Cliente não registrado ou expirado.");
+            return;
+        }
+
+        String result = "Usuarios online: ";
+
+        for (int i = 0; i < clients.size(); i++) {
+            result += clients.get(i).getName();
+
+            if (i + 1 != clients.size()) {
+                result += ", ";
+            } else {
+                result+= ".";
+            }
+        }
+
+        this.sendMessage(result, IPAddress, port);
     }
 
     /**
