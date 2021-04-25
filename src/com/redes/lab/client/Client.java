@@ -7,8 +7,10 @@ import java.net.InetAddress;
 import java.util.Scanner;
 
 class Client {
-
+    private static final int MAX_BUFFER_SIZE = 1024;
+    private static final int SERVER_PORT = 9876;
     private final DatagramSocket clientSocket;
+
     private final InetAddress IPAddress;
     private final Scanner scanner;
     private final MulticastReceiver multicastReceiver;
@@ -26,12 +28,18 @@ class Client {
 
     public void run() throws IOException {
 
-        System.out.println("Bem-vindo ao Telegram JR. Para se cadastrar use o comando /register [nome]");
+        System.out.println("Bem-vindo ao Telegram JR. Para se cadastrar use o comando !register [nome]");
 
         while(true){
 
             byte[] sendBuffer = scanner.nextLine().getBytes();
-            DatagramPacket pack = new DatagramPacket(sendBuffer, sendBuffer.length, IPAddress, 9876);
+
+            if(sendBuffer.length > MAX_BUFFER_SIZE){
+                System.out.println("Mensagem grande demais para ser enviada.");
+                continue;
+            }
+
+            DatagramPacket pack = new DatagramPacket(sendBuffer, sendBuffer.length, IPAddress, SERVER_PORT);
             clientSocket.send(pack);
 
         }
