@@ -5,11 +5,7 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.time.LocalTime;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 import java.util.logging.Logger;
 
 import static com.redes.lab.server.Useless.helloMessages;
@@ -56,6 +52,7 @@ public class Server {
             // pega mensagem e separa conforme necessario
             var message = new String(receivedPacket.getData(), 0, receivedPacket.getLength());
             var splitMessage = message.split(" ");
+            var text = extractText(splitMessage);
 
             // verifica se a mensagem recebida é comando
             String command = "";
@@ -72,11 +69,13 @@ public class Server {
                     break;
 
                 case "!pm":
+                    this.privateMessage(receivedPacket.getPort(), argument, text);
                     break;
 
                 case "!leave":
                     this.removeClient(receivedPacket.getPort());
                     break;
+
                 default:
                     //Se o comando não existir, ou não for comando, envia para todos como fala;
                     this.defaultMessage(receivedPacket.getPort(), message);
@@ -102,14 +101,49 @@ public class Server {
             return;
         }
 
-        var client = this.getSender(port);
+        var client = this.getClientByPort(port);
         if (client.isPresent()) {
             multicastPublisher.sendMessage(this.getHour() + " " + client.get().getName() + ": " + message);
         }
     }
 
+    private void privateMessage(int senderPort, String receiverName, String text) throws IOException {
+        if (!this.validateClient(senderPort)) {
+            LOGGER.warning(": Cliente não registrado ou expirado.");
+            return;
+        }
+
+        var receiverClientOpt = this.getClientByName(receiverName);
+
+
+        if (receiverClientOpt.isEmpty()) {
+            LOGGER.warning(": Destinatário não registrado ou expirado.");
+            return;
+        }
+
+        var receiverClient = receiverClientOpt.get();
+
+        if (text.equals("")) return;
+
+        var senderName = getClientByPort(senderPort).get().getName();
+        var message = this.getHour() + " " + senderName + " (private): " + text;
+
+        this.sendMessage(message, receiverClient.getIPAdress(), receiverClient.getPort());
+    }
+
+    private String extractText(String[] splitText) {
+        var result = "";
+        for (int i = 2; i < splitText.length; i++) {
+            result += splitText[i];
+            if (i + 1 != splitText.length) {
+                result += " ";
+            }
+        }
+        return result;
+    }
+
     private void removeClient(int port) throws IOException {
-        var client = this.getSender(port).get();
+        var client = this.getClientByPort(port).get();
         clients.removeIf(x -> x.getPort() == port);
         multicastPublisher.sendMessage(this.getHour() + " " + client.getName() + " saiu do servidor. '-' ");
 
@@ -126,9 +160,15 @@ public class Server {
     /**
      * Get sender in client list
      */
-    private Optional<Client> getSender(int port) {
+    private Optional<Client> getClientByPort(int port) {
         return clients.stream()
                 .filter(it -> it.getPort() == port)
+                .findFirst();
+    }
+
+    private Optional<Client> getClientByName(String name) {
+        return clients.stream()
+                .filter(it -> it.getName().equals(name))
                 .findFirst();
     }
 
@@ -136,7 +176,7 @@ public class Server {
      * Checks if given clients exists.
      */
     private boolean validateClient(int port) {
-        var client = this.getSender(port);
+        var client = this.getClientByPort(port);
         return client.isPresent();
     }
 

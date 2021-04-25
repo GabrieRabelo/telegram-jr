@@ -24,6 +24,8 @@ public class MessageReceiver extends Thread {
 
         if (message.equals("terminate")) {
             System.exit(1);
+        } else {
+            System.out.println(message);
         }
     }
 }
