@@ -14,6 +14,7 @@ class Client {
     private final InetAddress IPAddress;
     private final Scanner scanner;
     private final MulticastReceiver multicastReceiver;
+    private final MessageReceiver messageReceiver ;
 
     public Client() throws IOException{
         scanner = new Scanner(System.in);
@@ -24,6 +25,9 @@ class Client {
         //Inicia receptor multicast
         multicastReceiver = new MulticastReceiver();
         multicastReceiver.start();
+
+        messageReceiver = new MessageReceiver(clientSocket);
+        messageReceiver.start();
     }
 
     public void run() throws IOException {
@@ -43,8 +47,6 @@ class Client {
             clientSocket.send(pack);
 
         }
-
-
     }
 
     public static void main(String[] args) throws IOException {

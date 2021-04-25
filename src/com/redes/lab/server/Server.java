@@ -25,7 +25,6 @@ public class Server {
     private final MulticastPublisher multicastPublisher;
 
 
-
     public Server() throws IOException {
         serverSocket = new DatagramSocket(9876);
         multicastPublisher = new MulticastPublisher();
@@ -55,7 +54,7 @@ public class Server {
                 continue;
 
             // pega mensagem e separa conforme necessario
-            var message = new String(receivedPacket.getData(),0, receivedPacket.getLength());
+            var message = new String(receivedPacket.getData(), 0, receivedPacket.getLength());
             var splitMessage = message.split(" ");
 
             // verifica se a mensagem recebida é comando
@@ -63,7 +62,8 @@ public class Server {
             var argument = "";
             if (splitMessage[0].startsWith("!")) {
                 command = splitMessage[0].toLowerCase();
-                argument = splitMessage[1];
+                if (splitMessage.length > 1)
+                    argument = splitMessage[1];
             }
 
             switch (command) {
@@ -74,6 +74,9 @@ public class Server {
                 case "!pm":
                     break;
 
+                case "!leave":
+                    this.removeClient(receivedPacket.getPort());
+                    break;
                 default:
                     //Se o comando não existir, ou não for comando, envia para todos como fala;
                     this.defaultMessage(receivedPacket.getPort(), message);
@@ -88,7 +91,7 @@ public class Server {
         clients.add(client);
 
         // publica mensagem de boas vindas à todos usuários do chat
-        var helloMessage = helloMessages[r.nextInt(helloMessages.length-1)];
+        var helloMessage = helloMessages[r.nextInt(helloMessages.length - 1)];
         multicastPublisher.sendMessage(this.getHour() + " Servidor: " + String.format(helloMessage, name));
     }
 
@@ -103,6 +106,21 @@ public class Server {
         if (client.isPresent()) {
             multicastPublisher.sendMessage(this.getHour() + " " + client.get().getName() + ": " + message);
         }
+    }
+
+    private void removeClient(int port) throws IOException {
+        var client = this.getSender(port).get();
+        clients.removeIf(x -> x.getPort() == port);
+        multicastPublisher.sendMessage(this.getHour() + " " + client.getName() + " saiu do servidor. '-' ");
+
+        this.sendMessage("terminate", client.getIPAdress(), client.getPort());
+    }
+
+    private void sendMessage(String message, InetAddress IPAddress, int port) throws IOException {
+        var buffer = message.getBytes();
+        DatagramPacket datagram = new DatagramPacket(buffer, buffer.length, IPAddress, port);
+        serverSocket.send(datagram);
+
     }
 
     /**

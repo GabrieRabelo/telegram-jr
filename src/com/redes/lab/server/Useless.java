@@ -10,7 +10,7 @@ public class Useless {
 
     public static String[] helloMessages = {
             "Um %s selvagem chegou no servidor.",
-            "Digam olá para o(a) %s", "%s eu escolho você!",
+            "Digam olá para o(a) %s", "%s bem vindo ao tele!",
             "%s, you shall pass.",
             "O segurança do grupo aprovou %s neste chat."
     };
