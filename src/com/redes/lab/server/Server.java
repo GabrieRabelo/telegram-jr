@@ -77,7 +77,7 @@ public class Server {
                     break;
 
                 case "!online":
-                    this.showOnlineClients(receivedPacket.getAddress(), receivedPacket.getPort());
+                    this.onlineClients(receivedPacket.getAddress(), receivedPacket.getPort());
                     break;
                 default:
                     //Se o comando não existir, ou não for comando, envia para todos como fala;
@@ -159,13 +159,13 @@ public class Server {
         serverSocket.send(datagram);
     }
 
-    private void showOnlineClients(InetAddress IPAddress, int port) throws IOException {
+    private void onlineClients(InetAddress IPAddress, int port) throws IOException {
         if (!this.validateClient(port)) {
             LOGGER.warning(": Cliente não registrado ou expirado.");
             return;
         }
 
-        String result = "Usuarios online: ";
+        String result = "Usuarios online (" + clients.size() + "): ";
 
         for (int i = 0; i < clients.size(); i++) {
             result += clients.get(i).getName();
@@ -173,7 +173,7 @@ public class Server {
             if (i + 1 != clients.size()) {
                 result += ", ";
             } else {
-                result+= ".";
+                result += ".";
             }
         }
 

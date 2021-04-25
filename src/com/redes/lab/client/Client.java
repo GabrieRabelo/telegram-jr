@@ -13,8 +13,6 @@ class Client {
 
     private final InetAddress IPAddress;
     private final Scanner scanner;
-    private final MulticastReceiver multicastReceiver;
-    private final MessageReceiver messageReceiver ;
 
     public Client() throws IOException{
         scanner = new Scanner(System.in);
@@ -23,11 +21,8 @@ class Client {
         IPAddress = InetAddress.getByName("localhost");
 
         //Inicia receptor multicast
-        multicastReceiver = new MulticastReceiver();
-        multicastReceiver.start();
-
-        messageReceiver = new MessageReceiver(clientSocket);
-        messageReceiver.start();
+        new MulticastReceiver().start();
+        new MessageReceiver(clientSocket).start();
     }
 
     public void run() throws IOException {
