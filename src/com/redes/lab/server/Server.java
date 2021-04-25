@@ -15,6 +15,8 @@ public class Server {
 
     private static final Logger LOGGER = Logger.getLogger("Telegram Jr.");
     private static final Random r = new Random();
+    private static final int SERVER_PORT = 9876;
+    private static final int BUFFER_SIZE = 1024;
 
     private final DatagramSocket serverSocket;
     private final List<Client> clients = new ArrayList<>();
@@ -22,8 +24,8 @@ public class Server {
 
 
     public Server() throws IOException {
-        serverSocket = new DatagramSocket(9876);
-        multicastPublisher = new MulticastPublisher();
+        serverSocket = new DatagramSocket(SERVER_PORT);
+        multicastPublisher = new MulticastPublisher(serverSocket);
 
         System.setProperty("java.util.logging.SimpleFormatter.format",
                 "%1$tF %1$tT %4$s %2$s %5$s%6$s%n");
@@ -31,15 +33,13 @@ public class Server {
 
     public void run() throws IOException {
 
-        int len;
-
         LOGGER.info(": Telegram Jr. Server Started");
 
         // Command "thread"
         while (true) {
 
             // novo buffer;
-            var buffer = new byte[1024];
+            var buffer = new byte[BUFFER_SIZE];
 
             // recebe mensagem;
             DatagramPacket receivedPacket = new DatagramPacket(buffer, buffer.length);
@@ -157,7 +157,6 @@ public class Server {
         var buffer = message.getBytes();
         DatagramPacket datagram = new DatagramPacket(buffer, buffer.length, IPAddress, port);
         serverSocket.send(datagram);
-
     }
 
     private void showOnlineClients(InetAddress IPAddress, int port) throws IOException {

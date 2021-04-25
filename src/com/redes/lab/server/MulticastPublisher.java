@@ -7,8 +7,13 @@ import java.net.InetAddress;
 
 public class MulticastPublisher {
 
+    DatagramSocket socket;
+
+    public MulticastPublisher(DatagramSocket socket) {
+        this.socket = socket;
+    }
+
     public void sendMessage(String multicastMessage) throws IOException {
-        DatagramSocket socket = new DatagramSocket();
         InetAddress group = InetAddress.getByName("230.0.0.0");
         byte[] buffer = multicastMessage.getBytes();
 
@@ -16,6 +21,5 @@ public class MulticastPublisher {
                 = new DatagramPacket(buffer, buffer.length, group, 4446);
 
         socket.send(packet);
-        socket.close();
     }
 }
