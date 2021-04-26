@@ -4,9 +4,12 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
+import java.net.InetSocketAddress;
 import java.util.*;
 import java.util.logging.Logger;
 
+import static com.redes.lab.server.Utils.extractText;
+import static com.redes.lab.server.Utils.getClientsAsString;
 import static com.redes.lab.server.Utils.getHour;
 import static com.redes.lab.server.Utils.helloMessages;
 import static com.redes.lab.server.Utils.logo;
@@ -28,6 +31,7 @@ public class Server {
                 "%1$tF %1$tT %4$s %2$s %5$s%6$s%n");
 
         this.serverSocket = new DatagramSocket(SERVER_PORT);
+
         LOGGER.info(": Starting server at port " + SERVER_PORT);
 
         this.multicastPublisher = new MulticastPublisher(serverSocket);
@@ -71,7 +75,7 @@ public class Server {
                     break;
 
                 case "!pm":
-                    this.sendPrivateMessage(receivedPacket.getPort(), argument, text);
+                    this.sendPrivateMessage(receivedPacket.getAddress(), receivedPacket.getPort(), argument, text);
                     break;
 
                 case "!leave":
@@ -83,7 +87,7 @@ public class Server {
                     break;
                 default:
                     //Se o comando não existir, ou não for comando, envia para todos como fala;
-                    this.sendDefaultMessage(receivedPacket.getPort(), message);
+                    this.sendDefaultMessage(receivedPacket.getAddress(), receivedPacket.getPort(), message);
                     break;
             }
         }
@@ -95,15 +99,15 @@ public class Server {
         clients.add(client);
 
         // publica mensagem de boas vindas à todos usuários do chat
-        sendMessage("registered", port);
+        sendMessage("registered", IPAddress, port);
         var helloMessage = helloMessages[r.nextInt(helloMessages.length - 1)];
         var message = getHour() + " Servidor: " + String.format(helloMessage, name);
         multicastPublisher.sendMessage(message);
     }
 
-    private void sendDefaultMessage(int port, String message) throws IOException {
+    private void sendDefaultMessage(InetAddress IPAddress, int port, String message) throws IOException {
 
-        if (!this.validateClient(port)) {
+        if (this.invalidateClient(IPAddress, port)) {
             LOGGER.info(": Cliente não registrado ou expirado.");
             return;
         }
@@ -114,8 +118,8 @@ public class Server {
         }
     }
 
-    private void sendPrivateMessage(int senderPort, String receiverName, String text) throws IOException {
-        if (!this.validateClient(senderPort)) {
+    private void sendPrivateMessage(InetAddress IPAddress, int senderPort, String receiverName, String text) throws IOException {
+        if (this.invalidateClient(IPAddress, senderPort)) {
             LOGGER.info(": Cliente não registrado ou expirado.");
             return;
         }
@@ -135,34 +139,24 @@ public class Server {
         var senderName = getClientByPort(senderPort).get().getName();
 
         var message = getHour() + " " + senderName + " (private): " + text;
-        this.sendMessage(message, receiverClient.getPort());
+        this.sendMessage(message, receiverClient.getIPAdress(), receiverClient.getPort());
     }
 
     private void showOnlineClients(InetAddress IPAddress, int port) throws IOException {
-        if (!this.validateClient(port)) {
+        if (this.invalidateClient(IPAddress, port)) {
             LOGGER.warning(": Cliente não registrado ou expirado.");
             return;
         }
 
-        StringBuilder result = new StringBuilder("Usuários online (" + clients.size() + "): ");
+        var message = getClientsAsString(clients);
 
-        for (int i = 0; i < clients.size(); i++) {
-            result.append(clients.get(i).getName());
-
-            if (i + 1 != clients.size()) {
-                result.append(", ");
-            } else {
-                result.append(".");
-            }
-        }
-
-        this.sendMessage(result.toString(), port);
+        this.sendMessage(message, IPAddress, port);
     }
 
-    private void sendMessage(String message, int port) throws IOException {
+
+    private void sendMessage(String message, InetAddress IPAddress, int port) throws IOException {
         var buffer = message.getBytes();
 
-        InetAddress IPAddress = InetAddress.getByName("localhost");
         DatagramPacket datagram = new DatagramPacket(buffer, buffer.length, IPAddress, port);
 
         serverSocket.send(datagram);
@@ -170,14 +164,15 @@ public class Server {
 
     private void removeClient(int port) throws IOException {
         var clientOpt = this.getClientByPort(port);
-        if(clientOpt.isEmpty())
+        if (clientOpt.isEmpty())
             return;
 
         var client = clientOpt.get();
         clients.removeIf(x -> x.getPort() == port);
+        LOGGER.info(": " + client.getName() + " foi removido do servidor.");
         multicastPublisher.sendMessage(getHour() + " " + client.getName() + " saiu do servidor. '-' ");
 
-        this.sendMessage("terminate", client.getPort());
+        this.sendMessage("terminate", client.getIPAdress(), client.getPort());
     }
 
     /**
@@ -198,22 +193,11 @@ public class Server {
     /**
      * Checks if given clients exists.
      */
-    private boolean validateClient(int port) throws IOException {
+    private boolean invalidateClient(InetAddress IPAddress, int port) throws IOException {
         var client = this.getClientByPort(port);
-        if(client.isEmpty())
-            sendMessage("Você não está registrado, favor utilizar o comando !register [nome] para acessar o chat.", port);
-        return client.isPresent();
-    }
-
-    private String extractText(String[] splitText) {
-        var result = "";
-        for (int i = 2; i < splitText.length; i++) {
-            result += splitText[i];
-            if (i + 1 != splitText.length) {
-                result += " ";
-            }
-        }
-        return result;
+        if (client.isEmpty())
+            sendMessage("Você não está registrado, favor utilizar o comando !register [nome] para acessar o chat.", IPAddress, port);
+        return client.isEmpty();
     }
 
     /**
