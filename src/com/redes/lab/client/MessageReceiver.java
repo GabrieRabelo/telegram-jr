@@ -23,10 +23,16 @@ public class MessageReceiver extends Thread {
             }
             var message = new String(receivedPacket.getData(), 0, receivedPacket.getLength());
 
-            if (message.equals("terminate")) {
-                System.exit(1);
-            } else {
-                System.out.println(message);
+            switch (message){
+                case "terminate":
+                    System.exit(1);
+                    break;
+                case "registered":
+                    new MulticastReceiver().start();
+                    System.out.println("Registrado com sucesso.");
+                    break;
+                default:
+                    System.out.println(message);
             }
         }
 

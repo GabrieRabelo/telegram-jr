@@ -21,7 +21,6 @@ class Client {
         IPAddress = InetAddress.getByName("localhost");
 
         //Inicia receptor multicast
-        new MulticastReceiver().start();
         new MessageReceiver(clientSocket).start();
     }
 
@@ -31,7 +30,12 @@ class Client {
 
         while(true){
 
-            byte[] sendBuffer = scanner.nextLine().getBytes();
+            var input = scanner.nextLine();
+            if(input.isBlank()){
+                continue;
+            }
+
+            byte[] sendBuffer = input.getBytes();
 
             if(sendBuffer.length > MAX_BUFFER_SIZE){
                 System.out.println("Mensagem grande demais para ser enviada.");

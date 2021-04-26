@@ -22,7 +22,8 @@ public class MulticastReceiver extends Thread {
 
                 String received = new String(packet.getData(), 0, packet.getLength());
                 System.out.println(received);
-                if ("end".equals(received)) {
+                if ("terminate".equals(received)) {
+                    System.exit(1);
                     break;
                 }
             }

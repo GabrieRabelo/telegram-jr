@@ -4,12 +4,12 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.time.LocalTime;
 import java.util.*;
 import java.util.logging.Logger;
 
-import static com.redes.lab.server.Useless.helloMessages;
-import static com.redes.lab.server.Useless.logo;
+import static com.redes.lab.server.Utils.getHour;
+import static com.redes.lab.server.Utils.helloMessages;
+import static com.redes.lab.server.Utils.logo;
 
 public class Server {
 
@@ -22,13 +22,15 @@ public class Server {
     private final List<Client> clients = new ArrayList<>();
     private final MulticastPublisher multicastPublisher;
 
-
     public Server() throws IOException {
-        serverSocket = new DatagramSocket(SERVER_PORT);
-        multicastPublisher = new MulticastPublisher(serverSocket);
 
         System.setProperty("java.util.logging.SimpleFormatter.format",
                 "%1$tF %1$tT %4$s %2$s %5$s%6$s%n");
+
+        this.serverSocket = new DatagramSocket(SERVER_PORT);
+        LOGGER.info(": Starting server at port " + SERVER_PORT);
+
+        this.multicastPublisher = new MulticastPublisher(serverSocket);
     }
 
     public void run() throws IOException {
@@ -69,7 +71,7 @@ public class Server {
                     break;
 
                 case "!pm":
-                    this.privateMessage(receivedPacket.getPort(), argument, text);
+                    this.sendPrivateMessage(receivedPacket.getPort(), argument, text);
                     break;
 
                 case "!leave":
@@ -77,11 +79,11 @@ public class Server {
                     break;
 
                 case "!online":
-                    this.onlineClients(receivedPacket.getAddress(), receivedPacket.getPort());
+                    this.showOnlineClients(receivedPacket.getAddress(), receivedPacket.getPort());
                     break;
                 default:
                     //Se o comando não existir, ou não for comando, envia para todos como fala;
-                    this.defaultMessage(receivedPacket.getPort(), message);
+                    this.sendDefaultMessage(receivedPacket.getPort(), message);
                     break;
             }
         }
@@ -93,26 +95,28 @@ public class Server {
         clients.add(client);
 
         // publica mensagem de boas vindas à todos usuários do chat
+        sendMessage("registered", port);
         var helloMessage = helloMessages[r.nextInt(helloMessages.length - 1)];
-        multicastPublisher.sendMessage(this.getHour() + " Servidor: " + String.format(helloMessage, name));
+        var message = getHour() + " Servidor: " + String.format(helloMessage, name);
+        multicastPublisher.sendMessage(message);
     }
 
-    private void defaultMessage(int port, String message) throws IOException {
+    private void sendDefaultMessage(int port, String message) throws IOException {
 
         if (!this.validateClient(port)) {
-            LOGGER.warning(": Cliente não registrado ou expirado.");
+            LOGGER.info(": Cliente não registrado ou expirado.");
             return;
         }
 
         var client = this.getClientByPort(port);
         if (client.isPresent()) {
-            multicastPublisher.sendMessage(this.getHour() + " " + client.get().getName() + ": " + message);
+            multicastPublisher.sendMessage(getHour() + " " + client.get().getName() + ": " + message);
         }
     }
 
-    private void privateMessage(int senderPort, String receiverName, String text) throws IOException {
+    private void sendPrivateMessage(int senderPort, String receiverName, String text) throws IOException {
         if (!this.validateClient(senderPort)) {
-            LOGGER.warning(": Cliente não registrado ou expirado.");
+            LOGGER.info(": Cliente não registrado ou expirado.");
             return;
         }
 
@@ -120,7 +124,7 @@ public class Server {
 
 
         if (receiverClientOpt.isEmpty()) {
-            LOGGER.warning(": Destinatário não registrado ou expirado.");
+            LOGGER.info(": Destinatário não registrado ou expirado.");
             return;
         }
 
@@ -129,55 +133,51 @@ public class Server {
         if (text.equals("")) return;
 
         var senderName = getClientByPort(senderPort).get().getName();
-        var message = this.getHour() + " " + senderName + " (private): " + text;
 
-        this.sendMessage(message, receiverClient.getIPAdress(), receiverClient.getPort());
+        var message = getHour() + " " + senderName + " (private): " + text;
+        this.sendMessage(message, receiverClient.getPort());
     }
 
-    private String extractText(String[] splitText) {
-        var result = "";
-        for (int i = 2; i < splitText.length; i++) {
-            result += splitText[i];
-            if (i + 1 != splitText.length) {
-                result += " ";
-            }
-        }
-        return result;
-    }
-
-    private void removeClient(int port) throws IOException {
-        var client = this.getClientByPort(port).get();
-        clients.removeIf(x -> x.getPort() == port);
-        multicastPublisher.sendMessage(this.getHour() + " " + client.getName() + " saiu do servidor. '-' ");
-
-        this.sendMessage("terminate", client.getIPAdress(), client.getPort());
-    }
-
-    private void sendMessage(String message, InetAddress IPAddress, int port) throws IOException {
-        var buffer = message.getBytes();
-        DatagramPacket datagram = new DatagramPacket(buffer, buffer.length, IPAddress, port);
-        serverSocket.send(datagram);
-    }
-
-    private void onlineClients(InetAddress IPAddress, int port) throws IOException {
+    private void showOnlineClients(InetAddress IPAddress, int port) throws IOException {
         if (!this.validateClient(port)) {
             LOGGER.warning(": Cliente não registrado ou expirado.");
             return;
         }
 
-        String result = "Usuarios online (" + clients.size() + "): ";
+        StringBuilder result = new StringBuilder("Usuários online (" + clients.size() + "): ");
 
         for (int i = 0; i < clients.size(); i++) {
-            result += clients.get(i).getName();
+            result.append(clients.get(i).getName());
 
             if (i + 1 != clients.size()) {
-                result += ", ";
+                result.append(", ");
             } else {
-                result += ".";
+                result.append(".");
             }
         }
 
-        this.sendMessage(result, IPAddress, port);
+        this.sendMessage(result.toString(), port);
+    }
+
+    private void sendMessage(String message, int port) throws IOException {
+        var buffer = message.getBytes();
+
+        InetAddress IPAddress = InetAddress.getByName("localhost");
+        DatagramPacket datagram = new DatagramPacket(buffer, buffer.length, IPAddress, port);
+
+        serverSocket.send(datagram);
+    }
+
+    private void removeClient(int port) throws IOException {
+        var clientOpt = this.getClientByPort(port);
+        if(clientOpt.isEmpty())
+            return;
+
+        var client = clientOpt.get();
+        clients.removeIf(x -> x.getPort() == port);
+        multicastPublisher.sendMessage(getHour() + " " + client.getName() + " saiu do servidor. '-' ");
+
+        this.sendMessage("terminate", client.getPort());
     }
 
     /**
@@ -198,18 +198,27 @@ public class Server {
     /**
      * Checks if given clients exists.
      */
-    private boolean validateClient(int port) {
+    private boolean validateClient(int port) throws IOException {
         var client = this.getClientByPort(port);
+        if(client.isEmpty())
+            sendMessage("Você não está registrado, favor utilizar o comando !register [nome] para acessar o chat.", port);
         return client.isPresent();
+    }
+
+    private String extractText(String[] splitText) {
+        var result = "";
+        for (int i = 2; i < splitText.length; i++) {
+            result += splitText[i];
+            if (i + 1 != splitText.length) {
+                result += " ";
+            }
+        }
+        return result;
     }
 
     /**
      * Get now time and convert to string
      */
-    private String getHour() {
-        var localTime = LocalTime.now();
-        return localTime.getHour() + ":" + localTime.getMinute();
-    }
 
     public static void main(String[] args) throws IOException {
 
