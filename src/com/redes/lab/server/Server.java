@@ -17,6 +17,7 @@ import static com.redes.lab.server.Utils.logo;
 public class Server {
 
     private static final Logger LOGGER = Logger.getLogger("Server");
+
     private static final Random r = new Random();
     private static final int SERVER_PORT = 9876;
     private static final int KEEP_ALIVE_PORT = 9875;
@@ -85,7 +86,7 @@ public class Server {
                     break;
 
                 case "!leave":
-                    this.removeClient(receivedPacket.getPort());
+                    this.removeClient(receivedPacket.getPort(), "Client left by command.");
                     break;
 
                 case "!online":
@@ -103,12 +104,17 @@ public class Server {
     }
 
     private void registerClient(InetAddress IPAddress, int port, String name) throws IOException {
-        LOGGER.info(": Nova solicitação de registro para " + name + ".");
+        LOGGER.info(": New registration request for user name " + name + ".");
+        var existingClient = this.getClientByPort(port);
+        if (existingClient.isPresent()){
+            this.sendMessage("Você já está registrado, pare de tentar achar bugs. hehehe", IPAddress, port);
+            return;
+        }
         var client = new Client(name, IPAddress, port);
         clients.add(client);
 
         // publica mensagem de boas vindas à todos usuários do chat
-        sendMessage("registered", IPAddress, port);
+        this.sendMessage("registered", IPAddress, port);
         var helloMessage = helloMessages[r.nextInt(helloMessages.length - 1)];
         var message = getHour() + " Servidor: " + String.format(helloMessage, name);
         multicastPublisher.sendMessage(message);
@@ -117,7 +123,7 @@ public class Server {
     private void sendDefaultMessage(String message, InetAddress IPAddress, int port) throws IOException {
 
         if (this.invalidateClient(IPAddress, port)) {
-            LOGGER.info(": Cliente não registrado ou expirado.");
+            LOGGER.info(": Invalid action for not registered client.");
             return;
         }
 
@@ -129,7 +135,7 @@ public class Server {
 
     private void sendPrivateMessage(InetAddress IPAddress, int senderPort, String receiverName, String text) throws IOException {
         if (this.invalidateClient(IPAddress, senderPort)) {
-            LOGGER.info(": Cliente não registrado ou expirado.");
+            LOGGER.info(": Invalid action for not registered client.");
             return;
         }
 
@@ -143,17 +149,18 @@ public class Server {
 
         var receiverClient = receiverClientOpt.get();
 
-        if (text.equals("")) return;
+        if (text.isBlank()) return;
 
         var senderName = getClientByPort(senderPort).get().getName();
 
         var message = getHour() + " " + senderName + " (private): " + text;
+
         this.sendMessage(message, receiverClient.getIPAdress(), receiverClient.getPort());
     }
 
     private void showOnlineClients(InetAddress IPAddress, int port) throws IOException {
         if (this.invalidateClient(IPAddress, port)) {
-            LOGGER.warning(": Cliente não registrado ou expirado.");
+            LOGGER.info(": Invalid action for not registered client.");
             return;
         }
 
@@ -171,14 +178,14 @@ public class Server {
         serverSocket.send(datagram);
     }
 
-    public void removeClient(int port) throws IOException {
+    public void removeClient(int port, String reason) throws IOException {
         var clientOpt = this.getClientByPort(port);
         if (clientOpt.isEmpty())
             return;
 
         var client = clientOpt.get();
         clients.removeIf(x -> x.getPort() == port);
-        LOGGER.info(": " + client.getName() + " foi removido do servidor.");
+        LOGGER.info(String.format(": %s was removed from the server. Reason: %s", client.getName(), reason));
 
         multicastPublisher.sendMessage(getHour() + " " + client.getName() + " saiu do servidor. '-' ");
         this.sendMessage("terminate", client.getIPAdress(), client.getPort());
@@ -186,7 +193,7 @@ public class Server {
 
     public void showCommands(String message, InetAddress IPAddress, int port) throws IOException {
         if (this.invalidateClient(IPAddress, port)) {
-            LOGGER.warning(": Cliente não registrado ou expirado.");
+            LOGGER.info(": Invalid action for not registered cliLOGGER.info(\": Invalid action for not registered client.\");ent.");
             return;
         }
         this.sendMessage(message, IPAddress, port);
@@ -208,18 +215,14 @@ public class Server {
     }
 
     /**
-     * Checks if given clients exists.
+     * Checks if given client exists.
      */
     private boolean invalidateClient(InetAddress IPAddress, int port) throws IOException {
         var client = this.getClientByPort(port);
         if (client.isEmpty())
-            sendMessage("Você não está registrado, favor utilizar o comando !register [nome] para acessar o chat.", IPAddress, port);
+            this.sendMessage("Você não está registrado, favor utilizar o comando !register [nome] para acessar o chat.", IPAddress, port);
         return client.isEmpty();
     }
-
-    /**
-     * Get now time and convert to string
-     */
 
     public static void main(String[] args) throws IOException {
 

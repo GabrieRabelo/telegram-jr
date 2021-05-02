@@ -3,6 +3,7 @@ package com.redes.lab.server;
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class KeepAliveManager extends Thread {
 
@@ -33,7 +34,7 @@ public class KeepAliveManager extends Thread {
                 // se resultar em mais de 20 segundos remove o cliente
                 if (result > TIME_LIMIT_MILLIS) {
                     try {
-                        server.removeClient(client.getPort());
+                        server.removeClient(client.getPort(), "Server did not receive keep-alive for more than " + TIME_LIMIT_MILLIS / 1000 + " seconds from the client." );
                     } catch (IOException e) {
                         e.printStackTrace();
                     }

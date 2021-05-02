@@ -30,7 +30,11 @@ public class KeepAliveReceiver extends Thread{
                 e.printStackTrace();
             }
 
-            var client = getClientByPort(dp.getPort()).get();
+            var clientOpt = getClientByPort(dp.getPort());
+            if (clientOpt.isEmpty())
+                continue;
+
+            var client = clientOpt.get();
             client.setLastKeepAlive(Instant.now());
         }
     }
