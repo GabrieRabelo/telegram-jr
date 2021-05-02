@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Optional;
 
 public class KeepAliveReceiver extends Thread{
+
     private final DatagramSocket keepAliveSocket;
     private final List<Client> clients;
 
@@ -22,6 +23,7 @@ public class KeepAliveReceiver extends Thread{
         while (true) {
             var buffer = new byte[128];
             DatagramPacket dp = new DatagramPacket(buffer, buffer.length);
+
             try {
                 keepAliveSocket.receive(dp);
             } catch (IOException e) {

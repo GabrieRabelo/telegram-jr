@@ -16,11 +16,12 @@ import static com.redes.lab.server.Utils.logo;
 
 public class Server {
 
-    private static final Logger LOGGER = Logger.getLogger("Telegram Jr.");
+    private static final Logger LOGGER = Logger.getLogger("Server");
     private static final Random r = new Random();
     private static final int SERVER_PORT = 9876;
     private static final int KEEP_ALIVE_PORT = 9875;
     private static final int BUFFER_SIZE = 1024;
+    private static final List<String> COMMAND_LIST = Arrays.asList("!register", "!pm", "!leave", "!online", "!commands");
 
     private final DatagramSocket serverSocket;
     private final List<Client> clients = new CopyOnWriteArrayList<>();
@@ -38,7 +39,8 @@ public class Server {
 
         this.multicastPublisher = new MulticastPublisher(serverSocket);
 
-        new KeepAliveManager(KEEP_ALIVE_PORT, clients, this).start();
+        new KeepAliveManager(clients, this).start();
+        new KeepAliveReceiver(clients, KEEP_ALIVE_PORT).start();
     }
 
     public void run() throws IOException {
@@ -89,9 +91,12 @@ public class Server {
                 case "!online":
                     this.showOnlineClients(receivedPacket.getAddress(), receivedPacket.getPort());
                     break;
+
+                case "!commands":
+                    this.showCommands(COMMAND_LIST.toString(), receivedPacket.getAddress(), receivedPacket.getPort());
                 default:
                     //Se o comando não existir, ou não for comando, envia para todos como fala;
-                    this.sendDefaultMessage(receivedPacket.getAddress(), receivedPacket.getPort(), message);
+                    this.sendDefaultMessage(message, receivedPacket.getAddress(), receivedPacket.getPort());
                     break;
             }
         }
@@ -109,7 +114,7 @@ public class Server {
         multicastPublisher.sendMessage(message);
     }
 
-    private void sendDefaultMessage(InetAddress IPAddress, int port, String message) throws IOException {
+    private void sendDefaultMessage(String message, InetAddress IPAddress, int port) throws IOException {
 
         if (this.invalidateClient(IPAddress, port)) {
             LOGGER.info(": Cliente não registrado ou expirado.");
@@ -174,9 +179,17 @@ public class Server {
         var client = clientOpt.get();
         clients.removeIf(x -> x.getPort() == port);
         LOGGER.info(": " + client.getName() + " foi removido do servidor.");
-        multicastPublisher.sendMessage(getHour() + " " + client.getName() + " saiu do servidor. '-' ");
 
+        multicastPublisher.sendMessage(getHour() + " " + client.getName() + " saiu do servidor. '-' ");
         this.sendMessage("terminate", client.getIPAdress(), client.getPort());
+    }
+
+    public void showCommands(String message, InetAddress IPAddress, int port) throws IOException {
+        if (this.invalidateClient(IPAddress, port)) {
+            LOGGER.warning(": Cliente não registrado ou expirado.");
+            return;
+        }
+        this.sendMessage(message, IPAddress, port);
     }
 
     /**

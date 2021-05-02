@@ -1,3 +1,0 @@
-podemos manter um multicastr as msg que o srevidor manda para os clientes registrados ?
-
-podemos manter multicast ao inves de broascast ?
