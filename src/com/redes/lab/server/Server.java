@@ -4,8 +4,8 @@ import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.util.*;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Logger;
 
 import static com.redes.lab.server.Utils.extractText;
@@ -19,10 +19,11 @@ public class Server {
     private static final Logger LOGGER = Logger.getLogger("Telegram Jr.");
     private static final Random r = new Random();
     private static final int SERVER_PORT = 9876;
+    private static final int KEEP_ALIVE_PORT = 9875;
     private static final int BUFFER_SIZE = 1024;
 
     private final DatagramSocket serverSocket;
-    private final List<Client> clients = new ArrayList<>();
+    private final List<Client> clients = new CopyOnWriteArrayList<>();
     private final MulticastPublisher multicastPublisher;
 
     public Server() throws IOException {
@@ -33,8 +34,11 @@ public class Server {
         this.serverSocket = new DatagramSocket(SERVER_PORT);
 
         LOGGER.info(": Starting server at port " + SERVER_PORT);
+        LOGGER.info(": Starting keep-alive server at port " + KEEP_ALIVE_PORT);
 
         this.multicastPublisher = new MulticastPublisher(serverSocket);
+
+        new KeepAliveManager(KEEP_ALIVE_PORT, clients, this).start();
     }
 
     public void run() throws IOException {
@@ -162,7 +166,7 @@ public class Server {
         serverSocket.send(datagram);
     }
 
-    private void removeClient(int port) throws IOException {
+    public void removeClient(int port) throws IOException {
         var clientOpt = this.getClientByPort(port);
         if (clientOpt.isEmpty())
             return;

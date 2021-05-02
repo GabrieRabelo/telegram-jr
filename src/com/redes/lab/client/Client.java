@@ -8,6 +8,7 @@ import java.util.Scanner;
 
 class Client {
     private static final int MAX_BUFFER_SIZE = 1024;
+    private static final int KEEP_ALIVE_PORT = 9875;
     private static final int SERVER_PORT = 9876;
     private final DatagramSocket clientSocket;
 
@@ -15,13 +16,14 @@ class Client {
     private final Scanner scanner;
 
     public Client() throws IOException{
+
         scanner = new Scanner(System.in);
 
         clientSocket = new DatagramSocket();
         IPAddress = InetAddress.getByName("localhost");
 
         //Inicia receptor multicast
-        new MessageReceiver(clientSocket).start();
+        new MessageReceiver(clientSocket, IPAddress, KEEP_ALIVE_PORT).start();
     }
 
     public void run() throws IOException {

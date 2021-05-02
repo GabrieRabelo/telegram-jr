@@ -3,12 +3,17 @@ package com.redes.lab.client;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
+import java.net.InetAddress;
 
 public class MessageReceiver extends Thread {
     private final DatagramSocket datagramSocket;
+    private final InetAddress IPAddress;
+    private final int keepAlivePort;
 
-    public MessageReceiver(DatagramSocket datagramSocket) {
+    public MessageReceiver(DatagramSocket datagramSocket, InetAddress IPAddress, int keepAlivePort) {
         this.datagramSocket = datagramSocket;
+        this.IPAddress = IPAddress;
+        this.keepAlivePort = keepAlivePort;
     }
 
     public void run() {
@@ -29,6 +34,7 @@ public class MessageReceiver extends Thread {
                     break;
                 case "registered":
                     new MulticastReceiver().start();
+                    new KeepAliveSender(datagramSocket, IPAddress, keepAlivePort).start();
                     System.out.println("Registrado com sucesso.");
                     break;
                 default:
