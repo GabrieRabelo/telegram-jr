@@ -1,5 +1,11 @@
 package com.redes.lab.server;
 
+import com.redes.lab.server.connections.Client;
+import com.redes.lab.server.connections.KeepAliveManager;
+import com.redes.lab.server.connections.KeepAliveReceiver;
+import com.redes.lab.server.publishers.MessageSender;
+import com.redes.lab.server.publishers.MulticastPublisher;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -27,6 +33,7 @@ public class Server {
     private final DatagramSocket serverSocket;
     private final List<Client> clients = new CopyOnWriteArrayList<>();
     private final MulticastPublisher multicastPublisher;
+    private final MessageSender messageSender;
 
     public Server() throws IOException {
 
@@ -34,13 +41,14 @@ public class Server {
                 "%1$tF %1$tT %4$s %2$s %5$s%6$s%n");
 
         this.serverSocket = new DatagramSocket(SERVER_PORT);
-
-        LOGGER.info(": Starting server at port " + SERVER_PORT);
-        LOGGER.info(": Starting keep-alive server at port " + KEEP_ALIVE_PORT);
+        LOGGER.info(": Starting server at port: " + SERVER_PORT);
 
         this.multicastPublisher = new MulticastPublisher(serverSocket);
+        this.messageSender = new MessageSender(serverSocket);
 
         new KeepAliveManager(clients, this).start();
+
+        LOGGER.info(": Starting keep-alive server at port " + KEEP_ALIVE_PORT);
         new KeepAliveReceiver(clients, KEEP_ALIVE_PORT).start();
     }
 
@@ -107,14 +115,15 @@ public class Server {
         LOGGER.info(": New registration request for user name " + name + ".");
         var existingClient = this.getClientByPort(port);
         if (existingClient.isPresent()){
-            this.sendMessage("Você já está registrado, pare de tentar achar bugs. hehehe", IPAddress, port);
+            messageSender.sendMessage("Você já está registrado, pare de tentar achar bugs. hehehe", IPAddress, port);
             return;
         }
         var client = new Client(name, IPAddress, port);
         clients.add(client);
 
+        messageSender.sendMessage("registered", IPAddress, port);
+
         // publica mensagem de boas vindas à todos usuários do chat
-        this.sendMessage("registered", IPAddress, port);
         var helloMessage = helloMessages[r.nextInt(helloMessages.length - 1)];
         var message = getHour() + " Servidor: " + String.format(helloMessage, name);
         multicastPublisher.sendMessage(message);
@@ -143,7 +152,7 @@ public class Server {
 
 
         if (receiverClientOpt.isEmpty()) {
-            LOGGER.info(": Destinatário não registrado ou expirado.");
+            LOGGER.info(": Receiver " + receiverName + " not registered or expired.");
             return;
         }
 
@@ -155,7 +164,7 @@ public class Server {
 
         var message = getHour() + " " + senderName + " (private): " + text;
 
-        this.sendMessage(message, receiverClient.getIPAdress(), receiverClient.getPort());
+        messageSender.sendMessage(message, receiverClient.getIPAddress(), receiverClient.getPort());
     }
 
     private void showOnlineClients(InetAddress IPAddress, int port) throws IOException {
@@ -166,16 +175,7 @@ public class Server {
 
         var message = getClientsAsString(clients);
 
-        this.sendMessage(message, IPAddress, port);
-    }
-
-
-    private void sendMessage(String message, InetAddress IPAddress, int port) throws IOException {
-        var buffer = message.getBytes();
-
-        DatagramPacket datagram = new DatagramPacket(buffer, buffer.length, IPAddress, port);
-
-        serverSocket.send(datagram);
+        messageSender.sendMessage(message, IPAddress, port);
     }
 
     public void removeClient(int port, String reason) throws IOException {
@@ -188,7 +188,7 @@ public class Server {
         LOGGER.info(String.format(": %s was removed from the server. Reason: %s", client.getName(), reason));
 
         multicastPublisher.sendMessage(getHour() + " " + client.getName() + " saiu do servidor. '-' ");
-        this.sendMessage("terminate", client.getIPAdress(), client.getPort());
+        messageSender.sendMessage("terminate", client.getIPAddress(), client.getPort());
     }
 
     public void showCommands(String message, InetAddress IPAddress, int port) throws IOException {
@@ -196,7 +196,7 @@ public class Server {
             LOGGER.info(": Invalid action for not registered cliLOGGER.info(\": Invalid action for not registered client.\");ent.");
             return;
         }
-        this.sendMessage(message, IPAddress, port);
+        messageSender.sendMessage(message, IPAddress, port);
     }
 
     /**
@@ -220,7 +220,7 @@ public class Server {
     private boolean invalidateClient(InetAddress IPAddress, int port) throws IOException {
         var client = this.getClientByPort(port);
         if (client.isEmpty())
-            this.sendMessage("Você não está registrado, favor utilizar o comando !register [nome] para acessar o chat.", IPAddress, port);
+            messageSender.sendMessage("Você não está registrado, favor utilizar o comando !register [nome] para acessar o chat.", IPAddress, port);
         return client.isEmpty();
     }
 

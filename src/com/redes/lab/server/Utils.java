@@ -1,5 +1,7 @@
 package com.redes.lab.server;
 
+import com.redes.lab.server.connections.Client;
+
 import java.time.LocalTime;
 import java.util.List;
 

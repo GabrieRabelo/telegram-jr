@@ -1,4 +1,4 @@
-package com.redes.lab.client;
+package com.redes.lab.client.receivers;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
@@ -19,7 +19,6 @@ public class MulticastReceiver extends Thread {
                 buffer = new byte[256];
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 socket.receive(packet);
-
                 String received = new String(packet.getData(), 0, packet.getLength());
                 System.out.println(received);
                 if ("terminate".equals(received)) {

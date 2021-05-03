@@ -1,17 +1,17 @@
-package com.redes.lab.server;
+package com.redes.lab.server.connections;
 
 import java.net.InetAddress;
 import java.time.Instant;
 
 public class Client {
     private String name;
-    private InetAddress IPAdress;
+    private InetAddress IPAddress;
     private int port;
     private Instant lastKeepAlive;
 
-    public Client(String name, InetAddress IPAdress, int port) {
+    public Client(String name, InetAddress IPAddress, int port) {
         this.name = name;
-        this.IPAdress = IPAdress;
+        this.IPAddress = IPAddress;
         this.port = port;
         this.lastKeepAlive = Instant.now();
     }
@@ -24,12 +24,12 @@ public class Client {
         this.name = name;
     }
 
-    public InetAddress getIPAdress() {
-        return IPAdress;
+    public InetAddress getIPAddress() {
+        return IPAddress;
     }
 
-    public void setIPAdress(InetAddress IPAdress) {
-        this.IPAdress = IPAdress;
+    public void setIPAddress(InetAddress IPAddress) {
+        this.IPAddress = IPAddress;
     }
 
     public int getPort() {

@@ -1,4 +1,6 @@
-package com.redes.lab.client;
+package com.redes.lab.client.receivers;
+
+import com.redes.lab.client.senders.KeepAliveSender;
 
 import java.io.IOException;
 import java.net.DatagramPacket;

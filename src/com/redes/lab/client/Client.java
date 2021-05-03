@@ -1,5 +1,7 @@
 package com.redes.lab.client;
 
+import com.redes.lab.client.receivers.MessageReceiver;
+
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
@@ -10,8 +12,8 @@ class Client {
     private static final int MAX_BUFFER_SIZE = 1024;
     private static final int KEEP_ALIVE_PORT = 9875;
     private static final int SERVER_PORT = 9876;
-    private final DatagramSocket clientSocket;
 
+    private final DatagramSocket clientSocket;
     private final InetAddress IPAddress;
     private final Scanner scanner;
 

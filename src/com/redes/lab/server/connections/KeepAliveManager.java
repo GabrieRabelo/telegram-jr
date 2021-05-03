@@ -1,9 +1,10 @@
-package com.redes.lab.server;
+package com.redes.lab.server.connections;
+
+import com.redes.lab.server.Server;
 
 import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
-import java.util.logging.Logger;
 
 public class KeepAliveManager extends Thread {
 

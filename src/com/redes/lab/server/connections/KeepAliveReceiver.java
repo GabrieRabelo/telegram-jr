@@ -1,4 +1,4 @@
-package com.redes.lab.server;
+package com.redes.lab.server.connections;
 
 import java.io.IOException;
 import java.net.DatagramPacket;
