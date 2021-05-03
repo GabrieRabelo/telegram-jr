@@ -48,7 +48,6 @@ class Client {
 
             DatagramPacket pack = new DatagramPacket(sendBuffer, sendBuffer.length, IPAddress, SERVER_PORT);
             clientSocket.send(pack);
-
         }
     }
 
