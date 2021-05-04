@@ -16,7 +16,7 @@ public class MulticastPublisher {
     private static final int PORT = 4446;
     private final InetAddress group;
 
-    public MulticastPublisher(DatagramSocket serverSocket) throws UnknownHostException {
+    public MulticastPublisher(DatagramSocket serverSocket) throws IOException {
         this.serverSocket = serverSocket;
         this.group = InetAddress.getByName(MULTICAST_ADDRESS);
         LOGGER.info(String.format(": Creating multicast group at %s:%s", MULTICAST_ADDRESS, PORT));

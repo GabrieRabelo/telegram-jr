@@ -37,7 +37,6 @@ public class MessageReceiver extends Thread {
                 case "registered":
                     new MulticastReceiver().start();
                     new KeepAliveSender(datagramSocket, IPAddress, keepAlivePort).start();
-                    System.out.println("Registrado com sucesso, digite algum texto para falar no chat. Ou utilize o comando !commands para ver os comandos disponíveis");
                     break;
                 default:
                     System.out.println(message);

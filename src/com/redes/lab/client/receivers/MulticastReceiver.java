@@ -20,11 +20,12 @@ public class MulticastReceiver extends Thread {
                 DatagramPacket packet = new DatagramPacket(buffer, buffer.length);
                 socket.receive(packet);
                 String received = new String(packet.getData(), 0, packet.getLength());
-                System.out.println(received);
                 if ("terminate".equals(received)) {
+                    System.out.println("Servidor interrompeu a conexão.");
                     System.exit(1);
                     break;
                 }
+                System.out.println(received);
             }
             socket.leaveGroup(group);
             socket.close();

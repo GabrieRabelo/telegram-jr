@@ -44,6 +44,9 @@ public class Server {
         LOGGER.info(": Starting server at port: " + SERVER_PORT);
 
         this.multicastPublisher = new MulticastPublisher(serverSocket);
+        multicastPublisher.sendMessage("terminate");
+        LOGGER.info(": Closing previously connections.");
+
         this.messageSender = new MessageSender(serverSocket);
 
         new KeepAliveManager(clients, this).start();
@@ -115,17 +118,18 @@ public class Server {
         LOGGER.info(": New registration request for user name " + name + ".");
         var existingClient = this.getClientByPort(port);
         if (existingClient.isPresent()){
-            messageSender.sendMessage("Você já está registrado, pare de tentar achar bugs. hehehe", IPAddress, port);
+            messageSender.sendMessage(getHour() + " Servidor (privado): Você já está registrado, pare de tentar achar bugs. hehehe", IPAddress, port);
             return;
         }
         var client = new Client(name, IPAddress, port);
         clients.add(client);
 
         messageSender.sendMessage("registered", IPAddress, port);
+        messageSender.sendMessage(getHour() + " Servidor (privado): Registrado com sucesso, digite algum texto para falar no chat. Ou utilize o comando !commands para ver os comandos disponíveis", IPAddress, port);
 
         // publica mensagem de boas vindas à todos usuários do chat
         var helloMessage = helloMessages[r.nextInt(helloMessages.length - 1)];
-        var message = getHour() + " Servidor: " + String.format(helloMessage, name);
+        var message = getHour() + " Servidor (para todos): " + String.format(helloMessage, name);
         multicastPublisher.sendMessage(message);
     }
 
@@ -162,8 +166,10 @@ public class Server {
 
         var senderName = getClientByPort(senderPort).get().getName();
 
-        var message = getHour() + " " + senderName + " (private): " + text;
+        var message = getHour() + " " + senderName + " (privado): " + text;
+        var messageReceiver = getHour() + " " + receiverName + " (para " + senderName + "): " + text;
 
+        messageSender.sendMessage(messageReceiver, IPAddress, senderPort);
         messageSender.sendMessage(message, receiverClient.getIPAddress(), receiverClient.getPort());
     }
 
@@ -193,7 +199,7 @@ public class Server {
 
     public void showCommands(String message, InetAddress IPAddress, int port) throws IOException {
         if (this.invalidateClient(IPAddress, port)) {
-            LOGGER.info(": Invalid action for not registered cliLOGGER.info(\": Invalid action for not registered client.\");ent.");
+            LOGGER.info(": Invalid action for not registered client.");
             return;
         }
         messageSender.sendMessage(message, IPAddress, port);
