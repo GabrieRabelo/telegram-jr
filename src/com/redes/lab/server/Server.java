@@ -106,6 +106,7 @@ public class Server {
 
                 case "!commands":
                     this.showCommands(COMMAND_LIST.toString(), receivedPacket.getAddress(), receivedPacket.getPort());
+                    break;
                 default:
                     //Se o comando não existir, ou não for comando, envia para todos como fala;
                     this.sendDefaultMessage(message, receivedPacket.getAddress(), receivedPacket.getPort());
