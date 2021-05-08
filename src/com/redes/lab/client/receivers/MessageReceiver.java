@@ -7,6 +7,11 @@ import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 
+/**
+ * Message receiver serve para ter controle das mensagens
+ * que são recebidas pelo servidor somente para o cliente.
+ */
+
 public class MessageReceiver extends Thread {
     private final DatagramSocket datagramSocket;
     private final InetAddress IPAddress;
@@ -35,6 +40,7 @@ public class MessageReceiver extends Thread {
                     System.exit(1);
                     break;
                 case "registered":
+                    //Ao ser registrado, inicia 2 threads novas, a de receptor multicast e a de envio de keep-alive
                     new MulticastReceiver().start();
                     new KeepAliveSender(datagramSocket, IPAddress, keepAlivePort).start();
                     break;

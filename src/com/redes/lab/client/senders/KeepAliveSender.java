@@ -6,6 +6,11 @@ import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.Arrays;
 
+/**
+ *  KeepAliveSender é uma thread responsável pelo envio de sinal
+ *  keep-alive para o servidor pelo tempo determinado na pausa da thread.
+ */
+
 public class KeepAliveSender extends Thread {
 
     private final DatagramSocket clientSocket;

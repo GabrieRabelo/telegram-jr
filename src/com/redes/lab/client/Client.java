@@ -24,7 +24,7 @@ class Client {
         clientSocket = new DatagramSocket();
         IPAddress = InetAddress.getByName("localhost");
 
-        //Inicia receptor multicast
+        //Inicia thread do receptor de mensagem
         new MessageReceiver(clientSocket, IPAddress, KEEP_ALIVE_PORT).start();
     }
 

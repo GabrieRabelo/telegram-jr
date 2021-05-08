@@ -5,6 +5,10 @@ import java.net.DatagramPacket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 
+/**
+ * Multicast receiver serve para ter controle das mensagens que são recebidas
+ * pelo servidor para todos clientes inscritos no grupo de multicast.
+ */
 public class MulticastReceiver extends Thread {
     protected MulticastSocket socket;
     protected byte[] buffer;

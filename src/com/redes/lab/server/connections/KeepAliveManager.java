@@ -6,6 +6,11 @@ import java.io.IOException;
 import java.time.Instant;
 import java.util.List;
 
+/**
+ * KeepAliveManager é responsável por verificar cliente por cliente, seus últimos horários de keep-alive
+ * Se a diferença de tempo entre o ultimo keep-alive e o tempo de agora
+ * forem maiores que o tempo determinado na variável TIME_LIMIT_MILLIS a "conexão" é encerrada.
+ */
 public class KeepAliveManager extends Thread {
 
     private static final int TIME_LIMIT_MILLIS = 20000;

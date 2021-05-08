@@ -8,6 +8,10 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * KeepAliveReceiver é responsável por receber as mensagens de keep alive recebidas e
+ * atualizar o ultimo keep-alive de cada usuário.
+ */
 public class KeepAliveReceiver extends Thread{
 
     private final DatagramSocket keepAliveSocket;
