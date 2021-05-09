@@ -5,12 +5,15 @@ import com.redes.lab.server.connections.KeepAliveManager;
 import com.redes.lab.server.connections.KeepAliveReceiver;
 import com.redes.lab.server.publishers.MessageSender;
 import com.redes.lab.server.publishers.MulticastPublisher;
+import com.redes.lab.server.transmitter.ImageTransmitter;
 
+import java.awt.*;
 import java.io.IOException;
 import java.net.DatagramPacket;
 import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.logging.Logger;
 
@@ -53,6 +56,8 @@ public class Server {
 
         LOGGER.info(": Starting keep-alive server at port " + KEEP_ALIVE_PORT);
         new KeepAliveReceiver(clients, KEEP_ALIVE_PORT).start();
+
+        new ImageTransmitter(clients, multicastPublisher).start();
     }
 
     public void run() throws IOException {
@@ -106,6 +111,8 @@ public class Server {
 
                 case "!commands":
                     this.showCommands(COMMAND_LIST.toString(), receivedPacket.getAddress(), receivedPacket.getPort());
+                    break;
+                case "!image":
                     break;
                 default:
                     //Se o comando não existir, ou não for comando, envia para todos como fala;

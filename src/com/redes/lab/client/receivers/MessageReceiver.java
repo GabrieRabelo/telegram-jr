@@ -43,6 +43,7 @@ public class MessageReceiver extends Thread {
                     //Ao ser registrado, inicia 2 threads novas, a de receptor multicast e a de envio de keep-alive
                     new MulticastReceiver().start();
                     new KeepAliveSender(datagramSocket, IPAddress, keepAlivePort).start();
+                    new ImageReceiver().start();
                     break;
                 default:
                     System.out.println(message);
