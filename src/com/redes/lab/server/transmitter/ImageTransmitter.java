@@ -30,15 +30,11 @@ public class ImageTransmitter extends Thread {
             var buffer = new byte[50000];
             var dp = new DatagramPacket(buffer, buffer.length);
 
-            System.out.println("chegou antes de receber");
-
             try {
                 imageSocket.receive(dp);
             } catch (IOException e) {
                 e.printStackTrace();
             }
-
-            System.out.println("dps antes de receber");
 
             var clientOpt = getClientByPort(dp.getPort());
             if (clientOpt.isEmpty())

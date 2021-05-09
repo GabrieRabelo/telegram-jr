@@ -15,6 +15,7 @@ public class ImageReceiver extends Thread {
     private byte[] buffer;
     private InetAddress group;
     private Random r = new Random();
+    private static final String PATH_NAME = "src/com/redes/lab/client/disk/receive/%s.jpg/";
 
 
     public void run() {
@@ -27,7 +28,6 @@ public class ImageReceiver extends Thread {
                 buffer = new byte[50000];
                 var packet = new DatagramPacket(buffer, buffer.length);
 
-                System.out.println("aqui chegou");
                 socket.receive(packet);
 
                 var data = packet.getData();
@@ -37,10 +37,11 @@ public class ImageReceiver extends Thread {
 
                 var bufferedImage = ImageIO.read(bis);
 
-                System.out.println("chegou aqui");
-
-                var outputfile = new File("src/com/redes/lab/client/disk/receive/" + r.nextInt() + ".jpg/");
+                var dir = String.format(PATH_NAME, r.nextInt());
+                var outputfile = new File(dir);
                 ImageIO.write(bufferedImage, "jpg", outputfile);
+
+                System.out.println("Imagem recebida, salvando no diretório " + dir);
 
 
             }
