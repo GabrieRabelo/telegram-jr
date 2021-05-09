@@ -36,6 +36,9 @@ public class ImageTransmitter extends Thread {
                 e.printStackTrace();
             }
 
+            if(dp.getLength() <= 0)
+                continue;
+
             var clientOpt = getClientByPort(dp.getPort());
             if (clientOpt.isEmpty())
                 continue;

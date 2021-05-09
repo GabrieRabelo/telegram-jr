@@ -11,16 +11,18 @@ import java.util.Random;
 
 public class ImageReceiver extends Thread {
 
+    private static final String PATH_NAME = "src/com/redes/lab/client/disk/receive/%s.jpg/";
+    private static final int IMAGE_MULTICAST_PORT = 4447;
+
     private MulticastSocket socket;
     private byte[] buffer;
     private InetAddress group;
-    private Random r = new Random();
-    private static final String PATH_NAME = "src/com/redes/lab/client/disk/receive/%s.jpg/";
 
+    private Random r = new Random();
 
     public void run() {
         try {
-            socket = new MulticastSocket(4447);
+            socket = new MulticastSocket(IMAGE_MULTICAST_PORT);
             group = InetAddress.getByName("230.0.0.0");
             socket.joinGroup(group);
 
@@ -32,8 +34,7 @@ public class ImageReceiver extends Thread {
 
                 var data = packet.getData();
 
-                var bis = new ByteArrayInputStream(
-                        data);
+                var bis = new ByteArrayInputStream(data);
 
                 var bufferedImage = ImageIO.read(bis);
 
@@ -42,7 +43,6 @@ public class ImageReceiver extends Thread {
                 ImageIO.write(bufferedImage, "jpg", outputfile);
 
                 System.out.println("Imagem recebida, salvando no diretório " + dir);
-
 
             }
 
